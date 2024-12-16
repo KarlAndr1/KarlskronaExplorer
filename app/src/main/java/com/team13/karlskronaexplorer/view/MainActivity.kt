@@ -4,47 +4,67 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.unit.dp
-import com.team13.karlskronaexplorer.data.Post
-import com.team13.karlskronaexplorer.data.fetchPost
+import androidx.compose.ui.platform.LocalContext
 
-enum class Filter(val message: String) {
-    New("New"),
-    Close("Close"),
-    Found("Found"),
-    MyLocations("My Locations")
+enum class View {
+    Home,
+    Find,
+    Post
+}
+
+@Composable
+fun Nav(view: View, setView: (View) -> Unit) {
+    NavigationBar {
+        NavigationBarItem(
+            selected = view == View.Home,
+            onClick = {
+                if(view != View.Home) setView(View.Home)
+            },
+            icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "Home") }
+        )
+        NavigationBarItem(
+            selected = view == View.Find,
+            onClick = {
+                if(view != View.Find) setView(View.Find)
+            },
+            icon = { Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Active") }
+        )
+        NavigationBarItem(
+            selected = view == View.Post,
+            onClick = {
+                if(view != View.Post) setView(View.Post)
+            },
+            icon = { Icon(imageVector = Icons.Default.Share, contentDescription = "Post Location") }
+        )
+    }
+}
+
+@Composable
+fun MainTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = if(darkTheme) dynamicDarkColorScheme(LocalContext.current) else dynamicLightColorScheme(
+            LocalContext.current),
+        content = content
+    )
 }
 
 class MainActivity : ComponentActivity() {
@@ -52,89 +72,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            var selectedFilter: Filter by remember { mutableStateOf(Filter.New) }
+            var selectedView by remember { mutableStateOf(View.Home) }
             MainTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    bottomBar = { Nav(this, View.Home) },
+                    bottomBar = { Nav(selectedView) { view -> selectedView = view } },
                 ) { innerPadding ->
-                    Column(Modifier.padding(innerPadding).padding(horizontal = 8.dp)) {
-                        FilterButtons(selectedFilter, { x -> selectedFilter = x })
-                        Gallery(selectedFilter)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FilterButtons(selected: Filter?, setSelected: (Filter) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Filter.entries.forEach { filter ->
-            FilterChip(
-                selected = filter == selected,
-                onClick = { setSelected(filter) },
-                label = { Text(filter.message) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun Gallery(filter: Filter) {
-    // https://stackoverflow.com/questions/68919900/screen-width-and-height-in-jetpack-compose
-    val screenWidth = LocalConfiguration.current.screenWidthDp
-    val screenHeight = LocalConfiguration.current.screenHeightDp
-
-    val posts = remember { mutableStateListOf<Post>() }
-    var scroll by remember { mutableFloatStateOf(0f) }
-
-    val bufferPosts = 42; // Number of extra posts past the end that should be loaded
-    val spacing = 10.dp; // Spacing between each grid item
-    val itemSize = 80.dp; // Size of each grid item (e.g the thumbnail)
-    val rows = (screenHeight.dp / (spacing + itemSize)).toInt() + 1;
-    val itemsPerRow = (screenWidth.dp / (spacing + itemSize)).toInt();
-
-    val scrollOffset = scroll % (itemSize + spacing).value
-    val scrolledRows = (scroll / (itemSize + spacing).value).toInt()
-
-    // Given how many posts are currently loaded, when should the scrolling stop
-    // so that the user can't scroll too deep into the unloaded section
-    val maxScroll = ((posts.size + bufferPosts) / itemsPerRow - rows) * (itemSize + spacing).value
-
-    LaunchedEffect(scroll) {
-        val lastVisiblePost = (scrolledRows + rows) * itemsPerRow
-        for(i in posts.size until lastVisiblePost + bufferPosts) {
-            posts.add(fetchPost(i))
-        }
-    }
-
-    Text("Scroll $scroll, maxScroll $maxScroll, loaded ${posts.size}")
-    Box(Modifier.fillMaxWidth().scrollable(
-		ScrollableState { x: Float ->
-            val current = scroll
-            scroll -= x
-            if(scroll > maxScroll) scroll = maxScroll
-            if (scroll < 0) scroll = 0f
-
-            scroll - current // Delta
-		},
-		orientation = Orientation.Vertical,
-		enabled = true,
-	).clipToBounds()) {
-        Column(Modifier.fillMaxSize().wrapContentHeight(align = Alignment.Top, unbounded = true).offset(0.dp, -scrollOffset.dp), verticalArrangement = Arrangement.spacedBy(spacing), horizontalAlignment = Alignment.CenterHorizontally) {
-            repeat(rows) { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                    repeat(itemsPerRow) { item ->
-                        val index = item + (scrolledRows + row) * itemsPerRow
-                        if(index < posts.size) {
-                            Image(posts[index].getImage().asImageBitmap(), "Post Thumbnail", modifier = Modifier.requiredSize(itemSize))
-                        } else {
-                            Box(Modifier.requiredSize(itemSize).background(Color.Gray)) {
-                                Text("$index")
-                            }
-                        }
+                    when(selectedView) {
+                        View.Home -> HomeView(innerPadding)
+                        View.Post -> PostView(innerPadding)
+                        View.Find -> FindView(innerPadding)
                     }
                 }
             }

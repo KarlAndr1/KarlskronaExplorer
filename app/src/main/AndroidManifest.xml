@@ -26,7 +26,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".view.FindActivity" android:theme="@style/Theme.KarlskronaExplorer"/>
-        <activity android:name=".view.PostActivity" android:theme="@style/Theme.KarlskronaExplorer"/>
     </application>
 </manifest>
