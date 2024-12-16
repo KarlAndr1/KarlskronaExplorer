@@ -122,8 +122,8 @@ private fun Gallery(filter: Filter) {
 		},
 		orientation = Orientation.Vertical,
 		enabled = true,
-	).clipToBounds().wrapContentHeight(unbounded = true)) {
-        Column(Modifier.fillMaxSize().offset(0.dp, (-scrollOffset).dp + itemSize + spacing), verticalArrangement = Arrangement.spacedBy(spacing), horizontalAlignment = Alignment.CenterHorizontally) {
+	).clipToBounds()) {
+        Column(Modifier.fillMaxSize().wrapContentHeight(align = Alignment.Top, unbounded = true).offset(0.dp, -scrollOffset.dp), verticalArrangement = Arrangement.spacedBy(spacing), horizontalAlignment = Alignment.CenterHorizontally) {
             repeat(rows) { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
                     repeat(itemsPerRow) { item ->
