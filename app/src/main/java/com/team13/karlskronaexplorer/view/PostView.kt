@@ -92,8 +92,6 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier){
 				imageCapture.value = ImageCapture.Builder()
 					.setFlashMode(flashMode.value)
 					.build()
-				imageCapture.value = ImageCapture.Builder().build()
-
 				val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
 				cameraProvider.unbindAll()
@@ -109,7 +107,7 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier){
 			}, modifier = Modifier.fillMaxSize())
 			Column {
 				FlashToggleButton(flashMode.value)  { newFlashMode ->
-					flashMode.value = newFlashMode
+					flashMode.value = newFlashMode;
 				}
 				TakePictureButton(imageCapture.value, cameraExecutor)
 			}
