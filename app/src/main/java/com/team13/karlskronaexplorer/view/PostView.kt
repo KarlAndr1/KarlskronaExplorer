@@ -9,7 +9,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,44 +26,42 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
 import com.team13.karlskronaexplorer.components.FlashToggleButton
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-
 @Composable
 fun PostView(innerPadding: PaddingValues) {
 	val cameraExecutor = Executors.newSingleThreadExecutor()
 	Column(modifier = Modifier.padding(innerPadding)) {
-		CameraScreen(cameraExecutor, modifier =Modifier.padding(innerPadding))
+		CameraScreen(cameraExecutor, modifier = Modifier.padding(innerPadding))
 	}
 }
 
-
 @Composable
-private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier){
+private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	val context = LocalContext.current
-	val lifecycleOwner = LocalContext.current as LifecycleOwner
-	val imageCapture = remember { mutableStateOf<ImageCapture?>(null) }
+	val lifecycleOwner = LocalLifecycleOwner.current
+	val (flashMode, setFlashMode) = remember { mutableStateOf(ImageCapture.FLASH_MODE_OFF) }
 	val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
-	val flashMode = remember { mutableStateOf(ImageCapture.FLASH_MODE_OFF) }
+	val cameraProvider = cameraProviderFuture.get()
+	val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+	val preview = Preview.Builder().build()
 
 	val requestPermissionLauncher = rememberLauncherForActivityResult(
 		ActivityResultContracts.RequestPermission()
 	) { isGranted: Boolean ->
 		if (!isGranted) {
-			// Handle permission denial
 			println("Request denied")
 		}
 	}
@@ -75,60 +75,64 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier){
 		)
 	}
 
-
 	if (!hasCameraPermission.value) {
 		LaunchedEffect(Unit) {
 			requestPermissionLauncher.launch(Manifest.permission.CAMERA)
 		}
 	}
 
+	val (imageCapture, setImageCapture) = remember {mutableStateOf(ImageCapture.Builder()
+		.setFlashMode(flashMode)
+		.build())}
+
+	fun updateFlashMode(imageCapture: ImageCapture, flashMode: Int) {
+		imageCapture.setFlashMode(flashMode)
+	}
+
+	LaunchedEffect(cameraProvider) {
+		cameraProvider.bindToLifecycle(
+			lifecycleOwner, cameraSelector, preview, imageCapture
+		)
+		updateFlashMode(imageCapture, flashMode)
+	}
+
+
+
 	Box(modifier = Modifier.fillMaxSize()) {
 		if (hasCameraPermission.value) {
 			AndroidView(factory = { ctx ->
-				val cameraProvider = cameraProviderFuture.get()
-
-				val previewView = androidx.camera.view.PreviewView(ctx)
-				val preview = androidx.camera.core.Preview.Builder().build()
-				imageCapture.value = ImageCapture.Builder()
-					.setFlashMode(flashMode.value)
-					.build()
-				val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-				cameraProvider.unbindAll()
-				cameraProvider.bindToLifecycle(
-					lifecycleOwner,
-					cameraSelector,
-					preview,
-					imageCapture.value
-				)
-
+				val previewView = PreviewView(ctx)
 				preview.setSurfaceProvider(previewView.surfaceProvider)
 				previewView
 			}, modifier = Modifier.fillMaxSize())
+
 			Column {
-				FlashToggleButton(flashMode.value)  { newFlashMode ->
-					flashMode.value = newFlashMode;
+				// Flash toggle button
+				FlashToggleButton(flashMode) { newFlashMode ->
+					setFlashMode(newFlashMode)
+					updateFlashMode(imageCapture, newFlashMode)
 				}
-				TakePictureButton(imageCapture.value, cameraExecutor)
+				// Take picture button
+				TakePictureButton(imageCapture, cameraExecutor)
 			}
 		} else {
 			Text("Camera permission is required")
 		}
 	}
-
 }
+
 
 @Composable
 fun TakePictureButton(imageCapture: ImageCapture?, cameraExecutor: ExecutorService) {
 	val context = LocalContext.current
 	val outputDirectory = getOutputDirectory(context)
-	val buttonColor = Color(0x66FFFFFF)
+	val buttonColor = Color.White.copy(alpha = 0.4f)
 
 	Box(modifier = Modifier.fillMaxSize()) {
 		Button(
 			colors = ButtonDefaults.elevatedButtonColors(
 				containerColor = buttonColor,
-				contentColor =  buttonColor,
+				contentColor = buttonColor,
 			),
 			onClick = {
 				val photoFile = File(
@@ -139,6 +143,7 @@ fun TakePictureButton(imageCapture: ImageCapture?, cameraExecutor: ExecutorServi
 
 				val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
+				// Take picture with flash applied based on flashMode state
 				imageCapture?.takePicture(
 					outputOptions,
 					cameraExecutor,
@@ -160,12 +165,9 @@ fun TakePictureButton(imageCapture: ImageCapture?, cameraExecutor: ExecutorServi
 				.padding(16.dp)
 				.size(80.dp),
 			shape = CircleShape
-		){
-
-		}
+		) {}
 	}
 }
-
 
 fun getOutputDirectory(context: Context): File {
 	val mediaDir = context.externalMediaDirs.firstOrNull()?.let {
