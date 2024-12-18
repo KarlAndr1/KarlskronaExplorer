@@ -62,4 +62,5 @@ dependencies {
     implementation("androidx.camera:camera-video:1.5.0-alpha04")
     implementation("androidx.camera:camera-view:1.5.0-alpha04")
     implementation("androidx.camera:camera-extensions:1.5.0-alpha04")
+    implementation("com.google.android.gms:play-services-location:21.1.0")
 }

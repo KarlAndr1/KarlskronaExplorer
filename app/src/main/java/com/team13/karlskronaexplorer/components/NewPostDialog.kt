@@ -2,17 +2,18 @@ package com.team13.karlskronaexplorer.components
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.location.Location
 import android.media.ExifInterface
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -27,19 +28,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import java.io.InputStream
 
 @Composable
-fun NewPostDialog(showDialog: Boolean, imageUri: Uri?, onDismiss: () -> Unit) {
+fun NewPostDialog(showDialog: Boolean, imageUri: Uri?,location: Location?, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val (bitmap, setBitmap) = remember { mutableStateOf<Bitmap?>(null) }
+    val imageLocation = "Location: ${location?.latitude ?: "N/A"}, ${location?.longitude ?: "N/A"}"
 
     LaunchedEffect(imageUri) {
         imageUri?.let { uri ->
@@ -81,13 +85,14 @@ fun NewPostDialog(showDialog: Boolean, imageUri: Uri?, onDismiss: () -> Unit) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = "Captured Photo",
-                            modifier = Modifier.padding(10.dp)
+                            modifier = Modifier.padding(10.dp).clip(RoundedCornerShape(12.dp))
                         )
                     } else {
                         Text("No image captured yet.")
                     }
                     Text(
-                        text = "20N, 50E"
+                        text = imageLocation,
+                        fontSize = 16.sp
                     )
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Button(

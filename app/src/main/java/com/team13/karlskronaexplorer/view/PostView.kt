@@ -3,6 +3,7 @@ package com.team13.karlskronaexplorer.view
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,6 +35,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
 import com.team13.karlskronaexplorer.components.FlashToggleButton
 import com.team13.karlskronaexplorer.components.NewPostDialog
 import java.io.File
@@ -55,6 +57,7 @@ fun PostView(innerPadding: PaddingValues) {
 private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	val context = LocalContext.current
 	val lifecycleOwner = LocalLifecycleOwner.current
+	val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 	val (flashMode, setFlashMode) = remember { mutableStateOf(ImageCapture.FLASH_MODE_OFF) }
 	val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
 	val cameraProvider = cameraProviderFuture.get()
@@ -62,33 +65,42 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	val preview = Preview.Builder().build()
 	val (showDialog, setShowDialog) = remember { mutableStateOf(false) }
 	val (latestPhoto, setLatestPhoto) = remember { mutableStateOf<Uri?>(null) }
-
-	val (hasCameraPermission, setHasCameraPermission) = remember {
-		mutableStateOf(
-			ContextCompat.checkSelfPermission(
-				context,
-				Manifest.permission.CAMERA
-			) == PackageManager.PERMISSION_GRANTED
-		)
-	}
-
+	val (hasPermissions, setHasPermissions) = remember { mutableStateOf(false) }
+	val (photoLocation, setPhotoLocation) = remember { mutableStateOf<Location?>(null) }
 
 	val requestPermissionLauncher = rememberLauncherForActivityResult(
-		ActivityResultContracts.RequestPermission()
-	) { isGranted: Boolean ->
-		setHasCameraPermission(isGranted)
-		if (!isGranted) {
-			println("Request denied")
+		ActivityResultContracts.RequestMultiplePermissions()
+	) { permissions ->
+		val granted = permissions[Manifest.permission.CAMERA] == true &&
+				permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+		setHasPermissions(granted)
+	}
+
+
+	LaunchedEffect(Unit) {
+		val permissionsGranted = ContextCompat.checkSelfPermission(
+			context, Manifest.permission.CAMERA
+		) == PackageManager.PERMISSION_GRANTED &&
+				ContextCompat.checkSelfPermission(
+					context, Manifest.permission.ACCESS_FINE_LOCATION
+				) == PackageManager.PERMISSION_GRANTED
+		setHasPermissions(permissionsGranted)
+
+		if (!hasPermissions) {
+			requestPermissionLauncher.launch(
+				arrayOf(
+					Manifest.permission.CAMERA,
+					Manifest.permission.ACCESS_FINE_LOCATION
+				)
+			)
 		}
 	}
 
 
-	if (!hasCameraPermission) {
-		LaunchedEffect(Unit) {
-			requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-		}
+
+	if (!hasPermissions) {
 		Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-			Text("Camera permission is required to use this feature.")
+			Text("Camera and location permissions are required to use this feature.")
 		}
 		return
 	}
@@ -102,16 +114,24 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	}
 
 	LaunchedEffect(cameraProvider) {
-		cameraProvider.unbindAll()
-		cameraProvider.bindToLifecycle(
+		cameraProvider?.unbindAll()
+		cameraProvider?.bindToLifecycle(
 			lifecycleOwner, cameraSelector, preview, imageCapture
 		)
 		updateFlashMode(imageCapture, flashMode)
 	}
 
+	fun getLastKnownLocation(onLocationReceived: (Location?) -> Unit) {
+		fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+			onLocationReceived(location)
+		}.addOnFailureListener { exception ->
+			println("Failed to get location: ${exception.message}")
+			onLocationReceived(null)
+		}
+	}
 
 	Box(modifier = Modifier.fillMaxSize()) {
-		if (hasCameraPermission) {
+		if (hasPermissions) {
 			AndroidView(factory = { ctx ->
 				val previewView = PreviewView(ctx)
 				preview.setSurfaceProvider(previewView.surfaceProvider)
@@ -126,10 +146,13 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 				}
 				// Take picture button
 				TakePictureButton(imageCapture, cameraExecutor){ imageUri->
-					setShowDialog(true)
-					setLatestPhoto(imageUri)
+					getLastKnownLocation { location ->
+						setPhotoLocation(location)
+						setShowDialog(true)
+						setLatestPhoto(imageUri)
+					}
 				}
-				NewPostDialog(showDialog= showDialog, imageUri=latestPhoto) {
+				NewPostDialog(showDialog= showDialog, imageUri=latestPhoto, location = photoLocation) {
 					setShowDialog(false)
 				}
 			}
