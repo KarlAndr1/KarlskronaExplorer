@@ -35,11 +35,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.team13.karlskronaexplorer.components.FlashToggleButton
+import com.team13.karlskronaexplorer.components.NewPostDialog
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
+
 @Composable
 fun PostView(innerPadding: PaddingValues) {
 	val cameraExecutor = Executors.newSingleThreadExecutor()
@@ -57,6 +60,8 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	val cameraProvider = cameraProviderFuture.get()
 	val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 	val preview = Preview.Builder().build()
+	val (showDialog, setShowDialog) = remember { mutableStateOf(false) }
+	val (latestPhoto, setLatestPhoto) = remember { mutableStateOf<Uri?>(null) }
 
 	val requestPermissionLauncher = rememberLauncherForActivityResult(
 		ActivityResultContracts.RequestPermission()
@@ -113,7 +118,13 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 					updateFlashMode(imageCapture, newFlashMode)
 				}
 				// Take picture button
-				TakePictureButton(imageCapture, cameraExecutor)
+				TakePictureButton(imageCapture, cameraExecutor){ imageUri->
+					setShowDialog(true)
+					setLatestPhoto(imageUri)
+				}
+				NewPostDialog(showDialog= showDialog, imageUri=latestPhoto) {
+					setShowDialog(false)
+				}
 			}
 		} else {
 			Text("Camera permission is required")
@@ -123,7 +134,7 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 
 
 @Composable
-fun TakePictureButton(imageCapture: ImageCapture?, cameraExecutor: ExecutorService) {
+fun TakePictureButton(imageCapture: ImageCapture?, cameraExecutor: ExecutorService, onSave: (imageUri: Uri?)-> Unit) {
 	val context = LocalContext.current
 	val outputDirectory = getOutputDirectory(context)
 	val buttonColor = Color.White.copy(alpha = 0.4f)
@@ -149,12 +160,12 @@ fun TakePictureButton(imageCapture: ImageCapture?, cameraExecutor: ExecutorServi
 					cameraExecutor,
 					object : ImageCapture.OnImageSavedCallback {
 						override fun onError(exception: ImageCaptureException) {
-							println("ERROR:::")
 							println(exception)
 						}
 
 						override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
 							val savedUri = Uri.fromFile(photoFile)
+							onSave(savedUri)
 							println("Photo saved: $savedUri")
 						}
 					}
