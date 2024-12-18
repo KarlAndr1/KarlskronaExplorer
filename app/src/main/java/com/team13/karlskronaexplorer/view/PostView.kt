@@ -63,15 +63,7 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	val (showDialog, setShowDialog) = remember { mutableStateOf(false) }
 	val (latestPhoto, setLatestPhoto) = remember { mutableStateOf<Uri?>(null) }
 
-	val requestPermissionLauncher = rememberLauncherForActivityResult(
-		ActivityResultContracts.RequestPermission()
-	) { isGranted: Boolean ->
-		if (!isGranted) {
-			println("Request denied")
-		}
-	}
-
-	val hasCameraPermission = remember {
+	val (hasCameraPermission, setHasCameraPermission) = remember {
 		mutableStateOf(
 			ContextCompat.checkSelfPermission(
 				context,
@@ -80,10 +72,25 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 		)
 	}
 
-	if (!hasCameraPermission.value) {
+
+	val requestPermissionLauncher = rememberLauncherForActivityResult(
+		ActivityResultContracts.RequestPermission()
+	) { isGranted: Boolean ->
+		setHasCameraPermission(isGranted)
+		if (!isGranted) {
+			println("Request denied")
+		}
+	}
+
+
+	if (!hasCameraPermission) {
 		LaunchedEffect(Unit) {
 			requestPermissionLauncher.launch(Manifest.permission.CAMERA)
 		}
+		Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+			Text("Camera permission is required to use this feature.")
+		}
+		return
 	}
 
 	val (imageCapture, setImageCapture) = remember {mutableStateOf(ImageCapture.Builder()
@@ -95,6 +102,7 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	}
 
 	LaunchedEffect(cameraProvider) {
+		cameraProvider.unbindAll()
 		cameraProvider.bindToLifecycle(
 			lifecycleOwner, cameraSelector, preview, imageCapture
 		)
@@ -102,9 +110,8 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	}
 
 
-
 	Box(modifier = Modifier.fillMaxSize()) {
-		if (hasCameraPermission.value) {
+		if (hasCameraPermission) {
 			AndroidView(factory = { ctx ->
 				val previewView = PreviewView(ctx)
 				preview.setSurfaceProvider(previewView.surfaceProvider)
@@ -194,3 +201,4 @@ fun getApplicationName(context: Context): String {
 		stringId
 	)
 }
+
