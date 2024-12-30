@@ -34,14 +34,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.team13.karlskronaexplorer.data.Post
-import com.team13.karlskronaexplorer.data.fetchPost
-
-enum class Filter(val message: String) {
-	New("New"),
-	Close("Close"),
-	Found("Found"),
-	MyLocations("My Locations")
-}
+import com.team13.karlskronaexplorer.domain.Filter
+import com.team13.karlskronaexplorer.domain.PostViewContext
 
 @Composable
 fun HomeView(innerPadding: PaddingValues) {
@@ -60,7 +54,7 @@ private fun FilterButtons(selected: Filter?, setSelected: (Filter) -> Unit) {
 			FilterChip(
 				selected = filter == selected,
 				onClick = { setSelected(filter) },
-				label = { Text(filter.message) }
+				label = { Text(filter.getDisplayName()) }
 			)
 		}
 	}
@@ -72,8 +66,10 @@ private fun Gallery(filter: Filter) {
 	val screenWidth = LocalConfiguration.current.screenWidthDp
 	val screenHeight = LocalConfiguration.current.screenHeightDp
 
-	val posts = remember { mutableStateListOf<Post>() }
-	var scroll by remember { mutableFloatStateOf(0f) }
+	val posts = remember(filter) { mutableStateListOf<Post>() }
+	var scroll by remember(filter) { mutableFloatStateOf(0f) }
+
+	val fetchCtx = remember(filter) { PostViewContext(filter) }
 
 	val bufferPosts = 42; // Number of extra posts past the end that should be loaded
 	val spacing = 10.dp; // Spacing between each grid item
@@ -88,10 +84,10 @@ private fun Gallery(filter: Filter) {
 	// so that the user can't scroll too deep into the unloaded section
 	val maxScroll = ((posts.size + bufferPosts) / itemsPerRow - rows) * (itemSize + spacing).value
 
-	LaunchedEffect(scroll) {
+	LaunchedEffect(filter, scroll) {
 		val lastVisiblePost = (scrolledRows + rows) * itemsPerRow
 		for(i in posts.size until lastVisiblePost + bufferPosts) {
-			posts.add(fetchPost(i))
+			posts.add(fetchCtx.getPost() ?: break)
 		}
 	}
 

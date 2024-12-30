@@ -11,6 +11,11 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!--
+        IMPORTANT: android:usesClearTextTraffic should be removed in any real production application.
+        It is required here to allow the application to communicate with the local (plain) HTTP server used
+        for development
+     -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -20,6 +25,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.KarlskronaExplorer"
+
+        android:usesCleartextTraffic="true"
+
         tools:targetApi="31">
         <activity
             android:name=".view.MainActivity"

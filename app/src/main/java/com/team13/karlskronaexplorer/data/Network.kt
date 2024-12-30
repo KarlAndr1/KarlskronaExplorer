@@ -2,24 +2,56 @@ package com.team13.karlskronaexplorer.data
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.team13.karlskronaexplorer.domain.Filter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.net.URL
+
+// https://stackoverflow.com/questions/5528850/how-do-you-connect-localhost-in-the-android-emulator
+const val API_ENDPOINT = "http://10.0.2.2:4000"
+//const val API_ENDPOINT = "http://localhost:4000"
 
 class Post(private val id: Int, private val image: Bitmap) {
 	fun getImage(): Bitmap {
-		return image;
+		return image
 	}
 }
 
-public suspend fun fetchPost(id: Int): Post {
+suspend fun fetchJSON(url: String): JSONObject {
 	return withContext(Dispatchers.IO) {
-		val netStream = URL("https://picsum.photos/200").openStream()
+		val netStream = URL(url).openStream()
+		val jsonStr = netStream.readBytes().toString(Charsets.UTF_8)
+		netStream.close()
+
+		JSONObject(jsonStr)
+	}
+}
+
+suspend fun fetchImage(url: String): Bitmap {
+	return withContext(Dispatchers.IO) {
+		val netStream = URL(url).openStream()
 		val image = BitmapFactory.decodeStream(netStream)
 		netStream.close()
-		Post(
-			id,
-			image
-		);
+
+		image
+	}
+}
+
+suspend fun fetchPost(filter: Filter, beginAtId: Int? = null): Pair<Post, Int>? {
+	return withContext(Dispatchers.IO) {
+		val urlIdSuffix = if(beginAtId == null) "" else "/$beginAtId"
+		val postUrl = "$API_ENDPOINT/posts/${filter.getId()}$urlIdSuffix"
+
+		val response = fetchJSON(postUrl)
+
+		if(response.length() == 0) {
+			null
+		} else {
+			val id = response.getInt("id")
+			val nextId = id - 1
+			val image = fetchImage(response.getString("image_ref"))
+			Pair(Post(id, image), nextId)
+		}
 	}
 }
