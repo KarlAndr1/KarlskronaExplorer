@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.team13.karlskronaexplorer.R
@@ -43,7 +44,7 @@ fun FlashToggleButton(currentFlashMode: Int, modifier: Modifier = Modifier,onFla
                 val nextFlashModeIndex = (flashModes.indexOfFirst { it.first == currentFlashMode } + 1) % flashModes.size
                 onFlashModeChange(flashModes[nextFlashModeIndex].first)
             },
-            modifier = Modifier.size(40.dp).align(Alignment.TopEnd),
+            modifier = Modifier.size(40.dp).align(Alignment.TopEnd).testTag("FlashStateButton"),
             shape = CircleShape,
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.elevatedButtonColors(

@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -204,7 +205,8 @@ fun TakePictureButton(imageCapture: ImageCapture?, cameraExecutor: ExecutorServi
 			modifier = Modifier
 				.align(Alignment.BottomCenter)
 				.padding(16.dp)
-				.size(80.dp),
+				.size(80.dp)
+				.testTag("CameraButton"),
 			shape = CircleShape
 		) {}
 	}
