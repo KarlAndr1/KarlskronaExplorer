@@ -2,6 +2,7 @@ package com.team13.karlskronaexplorer.view
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -53,5 +54,21 @@ class PostViewUITest {
         }
         composeTestRule.onNodeWithText("Discard").performClick()
         composeTestRule.onNodeWithTag("NewPostDialog").assertDoesNotExist()
+    }
+
+
+    @Test
+    fun testPostAction() {
+        setUpTest()
+
+        composeTestRule.onNodeWithTag("CameraButton").performClick()
+        composeTestRule.waitUntil(timeoutMillis = 3000) {
+            composeTestRule.onAllNodesWithText("Post").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Post").performClick()
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithTag("NewPostDialog").fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onAllNodesWithText("Your new post was successfully created").fetchSemanticsNodes().isNotEmpty()
     }
 }

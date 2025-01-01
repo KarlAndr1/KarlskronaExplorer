@@ -63,7 +63,7 @@ fun NewPostDialog(showDialog: Boolean, imageUri: Uri?,location: Location?, onDis
 
     LaunchedEffect(isLoading) {
         if (isLoading) {
-            kotlinx.coroutines.delay(3000)
+            kotlinx.coroutines.delay(2000)
             setIsLoading(false)
             toast.show()
             onDismiss()
