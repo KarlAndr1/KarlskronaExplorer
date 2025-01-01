@@ -2,21 +2,32 @@ package com.team13.karlskronaexplorer.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,22 +39,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.team13.karlskronaexplorer.data.Post
 import com.team13.karlskronaexplorer.domain.Filter
 import com.team13.karlskronaexplorer.domain.PostViewContext
 
 @Composable
-fun HomeView(innerPadding: PaddingValues) {
+fun HomeView(innerPadding: PaddingValues, setActivePost: (Post) -> Unit) {
 	var selectedFilter: Filter by remember { mutableStateOf(Filter.New) }
 
 	Column(Modifier.padding(innerPadding).padding(horizontal = 8.dp)) {
 		FilterButtons(selectedFilter, { x -> selectedFilter = x })
-		Gallery(selectedFilter)
+		Gallery(selectedFilter, setActivePost)
 	}
 }
 
@@ -61,7 +75,7 @@ private fun FilterButtons(selected: Filter?, setSelected: (Filter) -> Unit) {
 }
 
 @Composable
-private fun Gallery(filter: Filter) {
+private fun Gallery(filter: Filter, setActivePost: (Post) -> Unit) {
 	// https://stackoverflow.com/questions/68919900/screen-width-and-height-in-jetpack-compose
 	val screenWidth = LocalConfiguration.current.screenWidthDp
 	val screenHeight = LocalConfiguration.current.screenHeightDp
@@ -70,6 +84,8 @@ private fun Gallery(filter: Filter) {
 	var scroll by remember(filter) { mutableFloatStateOf(0f) }
 
 	val fetchCtx = remember(filter) { PostViewContext(filter) }
+
+	var selectedPost by remember(filter) { mutableStateOf<Post?>(null) }
 
 	val bufferPosts = 42; // Number of extra posts past the end that should be loaded
 	val spacing = 10.dp; // Spacing between each grid item
@@ -104,13 +120,48 @@ private fun Gallery(filter: Filter) {
 		orientation = Orientation.Vertical,
 		enabled = true,
 	).clipToBounds()) {
+		if(selectedPost != null) {
+			Dialog(
+				onDismissRequest = { selectedPost = null }
+			) {
+				Card(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+					Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
+						val postImage = selectedPost!!.getImage()
+						Image(
+							postImage.asImageBitmap(),
+							"Select Post Image",
+							modifier = Modifier
+								.fillMaxWidth()
+								.aspectRatio(postImage.width.toFloat() / postImage.height)
+								.clip(RoundedCornerShape(8.dp))
+							,
+							alignment = Alignment.TopCenter
+						)
+						Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceEvenly) {
+							Button(onClick = { setActivePost(selectedPost!!) }) {
+								Text("Select")
+								Icon(imageVector = Icons.Default.Check, contentDescription = "Select Post")
+							}
+							Button(onClick = { selectedPost = null }) {
+								Icon(imageVector = Icons.Default.Close, contentDescription = "Close Post View")
+							}
+						}
+					}
+				}
+			}
+		}
 		Column(Modifier.fillMaxSize().wrapContentHeight(align = Alignment.Top, unbounded = true).offset(0.dp, -scrollOffset.dp), verticalArrangement = Arrangement.spacedBy(spacing), horizontalAlignment = Alignment.CenterHorizontally) {
 			repeat(rows) { row ->
 				Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
 					repeat(itemsPerRow) { item ->
 						val index = item + (scrolledRows + row) * itemsPerRow
 						if(index < posts.size) {
-							Image(posts[index].getImage().asImageBitmap(), "Post Thumbnail", modifier = Modifier.requiredSize(itemSize))
+							Image(
+								posts[index].getImage().asImageBitmap(),
+								"Post Thumbnail",
+								modifier = Modifier.requiredSize(itemSize).clickable { selectedPost = posts[index] },
+								contentScale = ContentScale.Crop
+							)
 						} else {
 							Box(Modifier.requiredSize(itemSize).background(Color.Gray)) {
 								Text("$index")

@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.team13.karlskronaexplorer.data.Post
 
 enum class View {
     Home,
@@ -73,15 +74,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             var selectedView by remember { mutableStateOf(View.Home) }
+            var activePost by remember { mutableStateOf<Post?>(null) }
             MainTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = { Nav(selectedView) { view -> selectedView = view } },
                 ) { innerPadding ->
                     when(selectedView) {
-                        View.Home -> HomeView(innerPadding)
+                        View.Home -> HomeView(innerPadding, { x -> activePost = x; selectedView = View.Find })
                         View.Post -> PostView(innerPadding)
-                        View.Find -> FindView(innerPadding)
+                        View.Find -> FindView(innerPadding, activePost)
                     }
                 }
             }
