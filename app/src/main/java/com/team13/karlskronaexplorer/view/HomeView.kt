@@ -47,7 +47,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.team13.karlskronaexplorer.data.Post
+import com.team13.karlskronaexplorer.domain.Post
 import com.team13.karlskronaexplorer.domain.Filter
 import com.team13.karlskronaexplorer.domain.PostViewContext
 

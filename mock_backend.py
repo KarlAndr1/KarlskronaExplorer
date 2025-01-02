@@ -26,7 +26,9 @@ def handlePostQuery(self):
 	else:
 		self.wfile.write(bytes(f"""{{
 			"id": {post_id},
-			"image_ref": "https://picsum.photos/id/{post_id}/200"
+			"image_ref": "https://picsum.photos/id/{post_id}/720/1280",
+			"latitude": 56.15,
+			"longitude": 15.586
 		}}""", "utf-8"))
 
 class Handler(BaseHTTPRequestHandler):

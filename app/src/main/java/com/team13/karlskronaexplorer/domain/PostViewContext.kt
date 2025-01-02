@@ -1,6 +1,5 @@
 package com.team13.karlskronaexplorer.domain
 
-import com.team13.karlskronaexplorer.data.Post
 import com.team13.karlskronaexplorer.data.fetchPost
 
 enum class Filter(private val display: String, private val id: String) {
