@@ -25,6 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.team13.karlskronaexplorer.data.Post
+import com.mapbox.geojson.Point
+import com.mapbox.maps.extension.compose.MapboxMap
+import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 
 enum class View {
     Home,
@@ -83,7 +86,7 @@ class MainActivity : ComponentActivity() {
                     when(selectedView) {
                         View.Home -> HomeView(innerPadding, { x -> activePost = x; selectedView = View.Find })
                         View.Post -> PostView(innerPadding)
-                        View.Find -> FindView(innerPadding, activePost)
+                        View.Find -> FindView(innerPadding)
                     }
                 }
             }
