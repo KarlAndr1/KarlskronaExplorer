@@ -3,13 +3,17 @@ package com.team13.karlskronaexplorer.data
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Base64
 import android.util.Log
 import com.team13.karlskronaexplorer.domain.Filter
 import com.team13.karlskronaexplorer.domain.Position
 import com.team13.karlskronaexplorer.domain.Post
+import com.team13.karlskronaexplorer.view.MainActivity
+import com.team13.karlskronaexplorer.view.getFilesDirPath
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -17,17 +21,63 @@ import java.net.URL
 const val API_ENDPOINT = "http://10.0.2.2:4000"
 //const val API_ENDPOINT = "http://localhost:4000"
 
-suspend fun fetchJSON(url: String): JSONObject {
+private val cachedToken: String? = null
+private suspend fun getToken(): String {
+	if(cachedToken != null) return cachedToken
+
 	return withContext(Dispatchers.IO) {
-		val netStream = URL(url).openStream()
-		val jsonStr = netStream.readBytes().toString(Charsets.UTF_8)
-		netStream.close()
+		val tokenFile = File(getFilesDirPath(), "token")
+		if (tokenFile.isFile && tokenFile.length() != 0L) {
+			tokenFile.readBytes().toString(Charsets.UTF_8)
+		} else {
+			val token = postJSON("$API_ENDPOINT/new-token").getString("token")
+			tokenFile.writeBytes(token.toByteArray(Charsets.UTF_8))
+			token
+		}
+	}
+}
+
+private suspend fun postJSON(url: String, json: JSONObject? = null): JSONObject {
+	return withContext(Dispatchers.IO) {
+		val connection = URL(url).openConnection() as HttpURLConnection
+		connection.requestMethod = "POST"
+
+		if(json != null) connection.doOutput = true
+		connection.doInput = true
+
+		connection.connect()
+		if(json != null) {
+			connection.outputStream.write(json.toString().toByteArray(Charsets.UTF_8))
+		}
+
+		val responseStr = connection.inputStream.readBytes().toString(Charsets.UTF_8)
+
+		connection.disconnect()
+
+		JSONObject(responseStr)
+	}
+}
+
+private suspend fun fetchJSON(url: String, useToken: Boolean = true): JSONObject {
+	return withContext(Dispatchers.IO) {
+		val connection = URL(url).openConnection() as HttpURLConnection
+		connection.requestMethod = "GET"
+		connection.doInput = true
+
+		if(useToken) {
+			val token = getToken()
+			connection.setRequestProperty("Authorization", token)
+		}
+
+		connection.connect()
+		val jsonStr = connection.inputStream.readBytes().toString(Charsets.UTF_8)
+		connection.disconnect()
 
 		JSONObject(jsonStr)
 	}
 }
 
-suspend fun fetchImage(url: String): Bitmap {
+private suspend fun fetchImage(url: String): Bitmap {
 	return withContext(Dispatchers.IO) {
 		val netStream = URL(url).openStream()
 		val image = BitmapFactory.decodeStream(netStream)

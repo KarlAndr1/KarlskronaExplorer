@@ -68,9 +68,18 @@ fun MainTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable (
     )
 }
 
+private var filesDirPath: String? = null
+fun getFilesDirPath(): String {
+    return filesDirPath!!
+}
+
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        filesDirPath = this.filesDir.path
+
         enableEdgeToEdge()
         setContent {
             var selectedView by remember { mutableStateOf(View.Home) }
