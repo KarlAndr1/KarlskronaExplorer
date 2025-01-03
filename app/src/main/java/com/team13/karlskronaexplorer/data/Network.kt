@@ -1,7 +1,9 @@
 package com.team13.karlskronaexplorer.data
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import com.team13.karlskronaexplorer.domain.Filter
 import com.team13.karlskronaexplorer.domain.Position
 import com.team13.karlskronaexplorer.domain.Post
@@ -15,13 +17,18 @@ import java.net.URL
 const val API_ENDPOINT = "http://10.0.2.2:4000"
 //const val API_ENDPOINT = "http://localhost:4000"
 
+@SuppressLint("NewApi")
 suspend fun fetchJSON(url: String): JSONObject {
 	return withContext(Dispatchers.IO) {
 		val netStream = URL(url).openStream()
-		val jsonStr = netStream.readBytes().toString(Charsets.UTF_8)
+		val reader = netStream.bufferedReader()
+		val jsonStr = StringBuilder()
+		while(true) {
+			val line = reader.readLine() ?: break
+			jsonStr.append(line)
+		}
 		netStream.close()
-
-		JSONObject(jsonStr)
+		JSONObject(jsonStr.toString())
 	}
 }
 

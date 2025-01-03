@@ -28,8 +28,8 @@ def handlePostQuery(self):
 			"id": {post_id},
 			"image_ref": "https://picsum.photos/id/{post_id}/720/1280",
 			"latitude": 56.15,
-			"longitude": 15.586
-		}}""", "utf-8"))
+			"longitude": 15.58
+	    }}""", "utf-8"))
 
 class Handler(BaseHTTPRequestHandler):
 	def do_GET(self):
