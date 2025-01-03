@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +42,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.team13.karlskronaexplorer.data.makePost
+import com.team13.karlskronaexplorer.domain.Position
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.InputStream
 
 @Composable
@@ -50,7 +56,10 @@ fun NewPostDialog(showDialog: Boolean, imageUri: Uri?,location: Location?, onDis
     val (bitmap, setBitmap) = remember { mutableStateOf<Bitmap?>(null) }
     val imageLocation = "Location: ${location?.latitude ?: "N/A"}, ${location?.longitude ?: "N/A"}"
     val toast = Toast.makeText( context, "Your new post was successfully created", Toast.LENGTH_SHORT)
+    val toastError = Toast.makeText( context, "Something went wrong!", Toast.LENGTH_SHORT)
+
     val (isLoading, setIsLoading) = remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(imageUri) {
         imageUri?.let { uri ->
@@ -58,15 +67,6 @@ fun NewPostDialog(showDialog: Boolean, imageUri: Uri?,location: Location?, onDis
             val rawBitmap = BitmapFactory.decodeStream(inputStream)
             val correctedBitmap = rawBitmap?.let { correctImageRotation(context, uri, it) }
             setBitmap(correctedBitmap)
-        }
-    }
-
-    LaunchedEffect(isLoading) {
-        if (isLoading) {
-            kotlinx.coroutines.delay(2000)
-            setIsLoading(false)
-            toast.show()
-            onDismiss()
         }
     }
 
@@ -115,7 +115,32 @@ fun NewPostDialog(showDialog: Boolean, imageUri: Uri?,location: Location?, onDis
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Button(
                             onClick = {
-                                setIsLoading(true)
+                                if(location != null && bitmap != null){
+                                    setIsLoading(true)
+                                    val coordinates = Position(location.latitude , location.longitude)
+                                    coroutineScope.launch {
+                                        try {
+                                            makePost(coordinates, bitmap)
+                                            withContext(Dispatchers.Main) {
+                                                setIsLoading(false)
+                                                toast.show()
+                                                onDismiss()
+                                            }
+                                        }catch (e:Exception){
+                                            withContext(Dispatchers.Main) {
+                                                setIsLoading(false)
+                                                onDismiss()
+                                                println("PostUploadError:${e.message}")
+                                                toastError.setText("Something went wrong while posting!")
+                                                toastError.show();
+                                            }
+
+                                        }
+                                    }
+                                }else{
+                                    toastError.setText("The image or the current location is mission")
+                                    toastError.show()
+                                }
                                       },
                             modifier = Modifier.padding(10.dp).width(110.dp),
                             colors = ButtonDefaults.elevatedButtonColors(

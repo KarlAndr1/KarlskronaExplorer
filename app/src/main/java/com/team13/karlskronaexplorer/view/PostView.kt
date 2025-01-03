@@ -1,9 +1,13 @@
 package com.team13.karlskronaexplorer.view
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,20 +17,25 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -68,6 +77,9 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	val (latestPhoto, setLatestPhoto) = remember { mutableStateOf<Uri?>(null) }
 	val (hasPermissions, setHasPermissions) = remember { mutableStateOf(false) }
 	val (photoLocation, setPhotoLocation) = remember { mutableStateOf<Location?>(null) }
+	val (isGpsEnabled, setIsGpsEnabled) = remember { mutableStateOf(false) }
+	val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+	setIsGpsEnabled(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
 
 	val requestPermissionLauncher = rememberLauncherForActivityResult(
 		ActivityResultContracts.RequestMultiplePermissions()
@@ -77,6 +89,29 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 		setHasPermissions(granted)
 	}
 
+
+
+	val gpsReceiver = remember {
+		object : BroadcastReceiver() {
+			override fun onReceive(context: Context, intent: Intent) {
+				val isEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+				setIsGpsEnabled(isEnabled)
+			}
+		}
+	}
+
+	DisposableEffect(context) {
+		val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
+		context.registerReceiver(gpsReceiver, filter)
+
+		onDispose {
+			context.unregisterReceiver(gpsReceiver)
+		}
+	}
+
+	LaunchedEffect(Unit) {
+		setIsGpsEnabled(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
+	}
 
 	LaunchedEffect(Unit) {
 		val permissionsGranted = ContextCompat.checkSelfPermission(
@@ -98,12 +133,25 @@ private fun CameraScreen(cameraExecutor: ExecutorService, modifier: Modifier) {
 	}
 
 
-
 	if (!hasPermissions) {
-		Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+		Box(modifier = Modifier.padding(20.dp).fillMaxSize(), contentAlignment = Alignment.Center) {
 			Text("Camera and location permissions are required to use this feature.")
 		}
 		return
+	}
+
+	if(!isGpsEnabled){
+		Column(
+			modifier = Modifier.fillMaxSize(),
+			verticalArrangement = Arrangement.Center,
+			horizontalAlignment = Alignment.CenterHorizontally
+		) {
+			Box(modifier = Modifier.padding(20.dp), contentAlignment = Alignment.Center) {
+				Text("You have to turn on your GPS to use this feature!")
+			}
+		}
+
+		return;
 	}
 
 	val (imageCapture, setImageCapture) = remember {mutableStateOf(ImageCapture.Builder()
