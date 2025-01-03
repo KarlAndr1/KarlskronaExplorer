@@ -20,16 +20,16 @@ def handlePostQuery(self):
 	
 	if int(post_id) > 10:
 		post_id = 10
-	
+
 	if post_id < 0:
-		self.wfile.write(bytes("{}", "utf-8"))
+		self.wfile.write(bytes("{}" + "   ", "utf-8"))
 	else:
-		self.wfile.write(bytes(f"""{{
+		self.wfile.write(bytes(f'''{{
 			"id": {post_id},
 			"image_ref": "https://picsum.photos/id/{post_id}/720/1280",
 			"latitude": 56.15,
 			"longitude": 15.58
-	    }}""", "utf-8"))
+		}}''' + "   ", "utf-8"))
 
 class Handler(BaseHTTPRequestHandler):
 	def do_GET(self):

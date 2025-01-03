@@ -17,18 +17,13 @@ import java.net.URL
 const val API_ENDPOINT = "http://10.0.2.2:4000"
 //const val API_ENDPOINT = "http://localhost:4000"
 
-@SuppressLint("NewApi")
 suspend fun fetchJSON(url: String): JSONObject {
 	return withContext(Dispatchers.IO) {
 		val netStream = URL(url).openStream()
-		val reader = netStream.bufferedReader()
-		val jsonStr = StringBuilder()
-		while(true) {
-			val line = reader.readLine() ?: break
-			jsonStr.append(line)
-		}
+		val jsonStr = netStream.readBytes().toString(Charsets.UTF_8)
 		netStream.close()
-		JSONObject(jsonStr.toString())
+
+		JSONObject(jsonStr)
 	}
 }
 
