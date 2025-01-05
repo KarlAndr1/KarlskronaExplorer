@@ -41,6 +41,31 @@ def handleNewTokenQuery(self):
 		"token": {urandom(64).hex()}
 	}}''' + "   ", "utf-8"))
 
+def handleNewPostQuery(self):
+	self.send_response(201)
+	self.end_headers()
+	
+	coordinates = ""
+	while True:
+		byte = self.rfile.read(1)
+		if byte == b'':
+			raise "Unexpected EOF in makePost header"
+
+		if byte == b'\0':
+			break
+		coordinates += byte.decode("ascii")
+	
+	a, b = coordinates.split(",")
+	a = float(a)
+	b = float(b)
+	
+	image_bytes = self.rfile.read()
+	
+	print("RECIEVED POST", a, b, "post.jpg", "by user: ", self.headers["Authorization"])
+	out = open("post.jpg", "wb")
+	out.write(image_bytes)
+	out.close()
+
 class Handler(BaseHTTPRequestHandler):
 	def do_GET(self):
 		print(f'	Auth: {self.headers["Authorization"]}')
@@ -52,6 +77,8 @@ class Handler(BaseHTTPRequestHandler):
 	def do_POST(self):
 		if self.path == "/new-token":
 			handleNewTokenQuery(self)
+		elif self.path == "/new-post":
+			handleNewPostQuery(self)
 		else:
 			self.send_response(404)
 

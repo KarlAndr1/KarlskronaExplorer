@@ -111,14 +111,19 @@ suspend fun fetchPost(filter: Filter, beginAtId: Int? = null): Pair<Post, Int>? 
 suspend fun makePost(coordinates: Position, image: Bitmap) {
 	withContext(Dispatchers.IO) {
 		// https://stackoverflow.com/questions/3324717/sending-http-post-request-in-java
-		val connection = URL("$API_ENDPOINT/new_post").openConnection() as HttpURLConnection
+		val connection = URL("$API_ENDPOINT/new-post").openConnection() as HttpURLConnection
 		connection.requestMethod = "POST"
 		connection.doOutput = true
+
+		connection.setRequestProperty("Authorization", getToken())
+
 		connection.connect()
 
 		connection.outputStream.write("${coordinates.getLatitude()},${coordinates.getLongitude()}".encodeToByteArray())
 		connection.outputStream.write(0)
-		image.compress(Bitmap.CompressFormat.JPEG, 100, connection.outputStream)
+		image.compress(Bitmap.CompressFormat.JPEG, 80, connection.outputStream)
+		connection.outputStream.close()
+		connection.inputStream.close()
 
 		connection.disconnect()
 	}
