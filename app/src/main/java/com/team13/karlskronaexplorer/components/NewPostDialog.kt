@@ -114,6 +114,7 @@ fun NewPostDialog(showDialog: Boolean, imageUri: Uri?,location: Location?, onDis
                     )
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Button(
+                            enabled = !isLoading,
                             onClick = {
                                 if(location != null && bitmap != null){
                                     setIsLoading(true)
@@ -159,6 +160,7 @@ fun NewPostDialog(showDialog: Boolean, imageUri: Uri?,location: Location?, onDis
                             }
                         }
                         Button(
+                            enabled = !isLoading,
                             onClick = { onDismiss() },
                             modifier = Modifier.padding(10.dp).width(110.dp),
                             colors = ButtonDefaults.elevatedButtonColors(
