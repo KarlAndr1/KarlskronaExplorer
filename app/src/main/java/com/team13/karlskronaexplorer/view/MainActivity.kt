@@ -18,13 +18,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.team13.karlskronaexplorer.data.loadActivePost
+import com.team13.karlskronaexplorer.data.saveActivePost
 import com.team13.karlskronaexplorer.domain.Post
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 enum class View {
     Home,
@@ -84,13 +89,26 @@ class MainActivity : ComponentActivity() {
         setContent {
             var selectedView by remember { mutableStateOf(View.Home) }
             var activePost by remember { mutableStateOf<Post?>(null) }
+
+            LaunchedEffect(Unit) {
+                activePost = loadActivePost()
+            }
+
+            fun setActivePost(post: Post) {
+                activePost = post
+                selectedView = View.Find
+                GlobalScope.launch {
+                    saveActivePost(post)
+                }
+            }
+
             MainTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = { Nav(selectedView) { view -> selectedView = view } },
                 ) { innerPadding ->
                     when(selectedView) {
-                        View.Home -> HomeView(innerPadding, { x -> activePost = x; selectedView = View.Find })
+                        View.Home -> HomeView(innerPadding, { x -> setActivePost(x) })
                         View.Post -> PostView(innerPadding)
                         View.Find -> FindView(innerPadding, activePost)
                     }
