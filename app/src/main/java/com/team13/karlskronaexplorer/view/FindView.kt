@@ -1,68 +1,37 @@
 package com.team13.karlskronaexplorer.view
 
-import androidx.compose.foundation.background
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.mapbox.geojson.Point
+import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
-import com.mapbox.maps.extension.compose.MapEffect
-import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
+import com.mapbox.maps.extension.compose.annotation.generated.withCircleColor
 import com.mapbox.maps.plugin.PuckBearing
+import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.CircleAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createCircleAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
-import com.mapbox.maps.viewannotation.geometry
-import com.mapbox.maps.viewannotation.viewAnnotationOptions
 import com.team13.karlskronaexplorer.domain.Post
-
-@Composable
-fun ViewAnnotationContent() {
-	Text(
-		text = "Hello world",
-		modifier = Modifier
-			.padding(3.dp)
-			.width(100.dp)
-			.height(60.dp)
-			.background(
-				Color.Red
-			),
-		textAlign = TextAlign.Center,
-		fontSize = 20.sp
-	)
-}
+import kotlinx.coroutines.delay
 
 @Composable
 fun FindView(innerPadding: PaddingValues, activePost: Post?) {
-	val mapViewportState = rememberMapViewportState {
-	}
+	val mapViewportState = rememberMapViewportState()
+	var circleColor = remember { mutableStateOf(Color.Red) }
+
 	MapboxMap(
 		Modifier.fillMaxSize(),
 		mapViewportState = mapViewportState,
-		) {
-		ViewAnnotation(
-			options = viewAnnotationOptions {
-				// View annotation is placed at the specific geo coordinate
-				if(activePost?.getPosition() != null) {
-					geometry(Point.fromLngLat(activePost.getPosition().getLongitude(), activePost.getPosition().getLatitude()))
-				} else {
-					geometry(Point.fromLngLat(11.11,11.11))
-				}
-
-			}
-		) {
-			// Insert the content of the ViewAnnotation
-			ViewAnnotationContent()
-		}
+	) {
 		MapEffect(Unit) { mapView ->
 			mapView.location.updateSettings {
 				locationPuck = createDefault2DPuck(withBearing = true)
@@ -70,12 +39,39 @@ fun FindView(innerPadding: PaddingValues, activePost: Post?) {
 				puckBearing = PuckBearing.COURSE
 				puckBearingEnabled = true
 			}
+			if(activePost != null) {
 			mapViewportState.transitionToFollowPuckState()
+			val annotationApi = mapView.annotations
+			val circleAnnotationManager = annotationApi.createCircleAnnotationManager()
+			val circleAnnotationOptions: CircleAnnotationOptions = CircleAnnotationOptions()
+				.withPoint(
+					Point.fromLngLat(
+						activePost.getPosition().getLongitude(),
+						activePost.getPosition().getLatitude()
+					)
+				)
+				.withCircleRadius(80.0)
+				.withCircleColor(circleColor.value)
+				.withCircleStrokeWidth(2.0)
+				.withCircleStrokeColor(0x55F10000)
+				.withDraggable(false)
 
+			circleAnnotationManager.deleteAll()
+			circleAnnotationManager.create(circleAnnotationOptions)
+			}
 		}
-
+		LaunchedEffect(Unit) {
+			var i = 0
+			while (true) {
+				circleColor.value = Color(
+					red = 255 - i,
+					green = 0 + i,
+					blue = 0
+				)
+				i++
+				// Circle Color should update from here if possible
+				delay(1000)
+			}
+		}
 	}
 }
-
-
-
