@@ -52,10 +52,15 @@ suspend fun loadActivePost(): Post? {
     }
 }
 
-suspend fun saveActivePost(post: Post) {
+suspend fun saveActivePost(post: Post?) {
     return withContext(Dispatchers.IO) {
-        val fstream = File(getFilesDirPath(), "active_post").outputStream()
-        encodePost(post, fstream)
-        fstream.close()
+        val file = File(getFilesDirPath(), "active_post")
+        if(post != null) {
+            val fstream = file.outputStream()
+            encodePost(post, fstream)
+            fstream.close()
+        } else {
+            if(file.isFile) file.delete()
+        }
     }
 }

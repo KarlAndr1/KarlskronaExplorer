@@ -126,17 +126,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-
-            LaunchedEffect(Unit) {
+            LaunchedEffect(Unit) { // Run only once; see https://stackoverflow.com/questions/75232544/how-to-make-launchedeffect-run-once-and-never-again
                 activePost = loadActivePost()
             }
 
-            fun setActivePost(post: Post) {
+            fun setActivePost(post: Post?) {
                 activePost = post
                 selectedView = View.Find
                 GlobalScope.launch {
                     saveActivePost(post)
                 }
+            }
+
+            fun unselectPost() {
+                setActivePost(null)
+                selectedView = View.Home
             }
 
             MainTheme {
@@ -145,7 +149,7 @@ class MainActivity : ComponentActivity() {
                     bottomBar = { Nav(selectedView, activePost) { view -> selectedView = view } },
                 ) { innerPadding ->
                     when(selectedView) {
-                        View.Home -> HomeView(innerPadding, { x -> setActivePost(x) })
+                        View.Home -> HomeView(innerPadding, ::setActivePost)
                         View.Post -> PostView(innerPadding)
                         View.Find -> FindView(innerPadding, activePost!!)
                     }
