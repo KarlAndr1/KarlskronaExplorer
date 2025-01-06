@@ -8,6 +8,7 @@ package com.team13.karlskronaexplorer.view
 import android.animation.ValueAnimator
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -95,6 +96,7 @@ fun FindView(innerPadding: PaddingValues, activePost: Post, unselect: ()->Unit) 
 	val mapViewportState = rememberMapViewportState()
 	var circleColor by remember { mutableLongStateOf(CIRCLE_COLOR_RED) }
 	var locationFound by remember { mutableStateOf(false)}
+	var imageExpanded by remember { mutableStateOf(false) }
 	val rand = Random(seed = activePost.getRandomSeed())
 	val randomLoc1 = rand.nextDouble(0.0001,0.0003)
 	val randomLoc2 = rand.nextDouble(0.0001,0.0003)
@@ -120,6 +122,32 @@ fun FindView(innerPadding: PaddingValues, activePost: Post, unselect: ()->Unit) 
 						Button(onClick = { unselect()}) {
 							Text("Confirm")
 							Icon(imageVector = Icons.Default.Close, contentDescription = "Confirm")
+						}
+					}
+				}
+			}
+		}
+	} else if(imageExpanded) {
+		Dialog(
+			onDismissRequest = { imageExpanded = false }
+		) {
+			Card(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+				Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
+					val postImage = activePost.getImage()
+					Image(
+						postImage.asImageBitmap(),
+						"Image",
+						modifier = Modifier
+							.fillMaxWidth()
+							.aspectRatio(postImage.width.toFloat() / postImage.height)
+							.clip(RoundedCornerShape(8.dp))
+						,
+						alignment = Alignment.TopCenter
+					)
+					Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceEvenly) {
+						Button(onClick = { imageExpanded = false }) {
+							Text("Dismiss")
+							Icon(imageVector = Icons.Default.Close, contentDescription = "Dismiss")
 						}
 					}
 				}
@@ -165,7 +193,7 @@ fun FindView(innerPadding: PaddingValues, activePost: Post, unselect: ()->Unit) 
 			}
 
 		}
-	Column(Modifier.fillMaxWidth().padding(0.dp,15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+	Column(Modifier.fillMaxWidth().padding(0.dp,innerPadding.calculateTopPadding() + 15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
 		Image(
 			activePost.getImage().asImageBitmap(),
 			"Select Post Image",
@@ -173,6 +201,7 @@ fun FindView(innerPadding: PaddingValues, activePost: Post, unselect: ()->Unit) 
 				.fillMaxWidth(0.20f)
 				.aspectRatio(1f)
 				.clip(RoundedCornerShape(8.dp))
+				.clickable { imageExpanded = true }
 			,
 			alignment = Alignment.TopCenter,
 			contentScale = ContentScale.Crop
