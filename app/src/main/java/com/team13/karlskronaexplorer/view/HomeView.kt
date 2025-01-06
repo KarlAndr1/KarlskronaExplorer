@@ -45,8 +45,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.team13.karlskronaexplorer.domain.AbstractPostFetcher
 import com.team13.karlskronaexplorer.domain.Filter
 import com.team13.karlskronaexplorer.domain.Post
 import com.team13.karlskronaexplorer.domain.PostFetcher
@@ -77,7 +79,7 @@ private fun FilterButtons(selected: Filter?, setSelected: (Filter) -> Unit) {
 }
 
 @Composable
-private fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
+fun Gallery(fetchCtx: AbstractPostFetcher, setActivePost: (Post) -> Unit) {
 	// https://stackoverflow.com/questions/68919900/screen-width-and-height-in-jetpack-compose
 	val screenWidth = LocalConfiguration.current.screenWidthDp
 	val screenHeight = LocalConfiguration.current.screenHeightDp
@@ -135,9 +137,9 @@ private fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
 	).clipToBounds()) {
 		if(selectedPost != null) {
 			Dialog(
-				onDismissRequest = { selectedPost = null }
+				onDismissRequest = { selectedPost = null },
 			) {
-				Card(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+				Card(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).testTag("GallerySelectPostDialog")) {
 					Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
 						val postImage = selectedPost!!.getImage()
 						Image(
@@ -151,11 +153,11 @@ private fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
 							alignment = Alignment.TopCenter
 						)
 						Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceEvenly) {
-							Button(onClick = { setActivePost(selectedPost!!) }) {
+							Button(onClick = { setActivePost(selectedPost!!) }, modifier = Modifier.testTag("GallerySelectPostButton")) {
 								Text("Select")
 								Icon(imageVector = Icons.Default.Check, contentDescription = "Select Post")
 							}
-							Button(onClick = { selectedPost = null }) {
+							Button(onClick = { selectedPost = null }, modifier = Modifier.testTag("GalleryCancelSelectButton")) {
 								Icon(imageVector = Icons.Default.Close, contentDescription = "Close Post View")
 							}
 						}
@@ -172,7 +174,7 @@ private fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
 							Image(
 								posts[index].getImage().asImageBitmap(),
 								"Post Thumbnail",
-								modifier = Modifier.requiredSize(itemSize).clickable { selectedPost = posts[index] },
+								modifier = Modifier.requiredSize(itemSize).testTag("GalleryImage").clickable { selectedPost = posts[index] },
 								contentScale = ContentScale.Crop
 							)
 						} else {
