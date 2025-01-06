@@ -49,15 +49,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.team13.karlskronaexplorer.domain.Post
 import com.team13.karlskronaexplorer.domain.Filter
-import com.team13.karlskronaexplorer.domain.PostViewContext
+import com.team13.karlskronaexplorer.domain.PostFetcher
 
 @Composable
 fun HomeView(innerPadding: PaddingValues, setActivePost: (Post) -> Unit) {
 	var selectedFilter: Filter by remember { mutableStateOf(Filter.New) }
+	val postFetcher = PostFetcher(selectedFilter)
 
 	Column(Modifier.padding(innerPadding).padding(horizontal = 8.dp)) {
 		FilterButtons(selectedFilter, { x -> selectedFilter = x })
-		Gallery(selectedFilter, setActivePost)
+		Gallery(postFetcher, setActivePost)
 	}
 }
 
@@ -75,17 +76,14 @@ private fun FilterButtons(selected: Filter?, setSelected: (Filter) -> Unit) {
 }
 
 @Composable
-private fun Gallery(filter: Filter, setActivePost: (Post) -> Unit) {
+private fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
 	// https://stackoverflow.com/questions/68919900/screen-width-and-height-in-jetpack-compose
 	val screenWidth = LocalConfiguration.current.screenWidthDp
 	val screenHeight = LocalConfiguration.current.screenHeightDp
 
-	val posts = remember(filter) { mutableStateListOf<Post>() }
-	var scroll by remember(filter) { mutableFloatStateOf(0f) }
-
-	val fetchCtx = remember(filter) { PostViewContext(filter) }
-
-	var selectedPost by remember(filter) { mutableStateOf<Post?>(null) }
+	val posts = remember(fetchCtx) { mutableStateListOf<Post>() }
+	var scroll by remember(fetchCtx) { mutableFloatStateOf(0f) }
+	var selectedPost by remember(fetchCtx) { mutableStateOf<Post?>(null) }
 
 	val bufferPosts = 42; // Number of extra posts past the end that should be loaded
 	val spacing = 10.dp; // Spacing between each grid item
@@ -100,7 +98,7 @@ private fun Gallery(filter: Filter, setActivePost: (Post) -> Unit) {
 	// so that the user can't scroll too deep into the unloaded section
 	val maxScroll = ((posts.size + bufferPosts) / itemsPerRow - rows) * (itemSize + spacing).value
 
-	LaunchedEffect(filter, scroll) {
+	LaunchedEffect(fetchCtx, scroll) {
 		val lastVisiblePost = (scrolledRows + rows) * itemsPerRow
 		for(i in posts.size until lastVisiblePost + bufferPosts) {
 			posts.add(fetchCtx.getPost() ?: break)

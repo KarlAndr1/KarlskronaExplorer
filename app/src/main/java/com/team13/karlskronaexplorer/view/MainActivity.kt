@@ -30,8 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import com.team13.karlskronaexplorer.data.loadActivePost
-import com.team13.karlskronaexplorer.data.saveActivePost
+import com.team13.karlskronaexplorer.domain.ActivePostSaver
 import com.team13.karlskronaexplorer.domain.Post
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -92,6 +91,8 @@ class MainActivity : ComponentActivity() {
 
         filesDirPath = this.filesDir.path
 
+        val postSaver = ActivePostSaver()
+
         enableEdgeToEdge()
         setContent {
             var selectedView by remember { mutableStateOf(View.Home) }
@@ -127,14 +128,14 @@ class MainActivity : ComponentActivity() {
             }
 
             LaunchedEffect(Unit) { // Run only once; see https://stackoverflow.com/questions/75232544/how-to-make-launchedeffect-run-once-and-never-again
-                activePost = loadActivePost()
+                activePost = postSaver.loadActivePost()
             }
 
             fun setActivePost(post: Post?) {
                 activePost = post
                 selectedView = View.Find
                 GlobalScope.launch {
-                    saveActivePost(post)
+                    postSaver.saveActivePost(post)
                 }
             }
 

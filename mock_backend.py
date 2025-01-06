@@ -5,6 +5,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from os import urandom
 import time
 
+num_posts = 100
+
 def handlePostQuery(self):
 	self.send_response(200)
 	
@@ -18,11 +20,15 @@ def handlePostQuery(self):
 		
 		case [f]:
 			filter_id = f
-			post_id = 10
+			post_id = num_posts
 	
-	if int(post_id) > 10:
-		post_id = 10
-
+	if int(post_id) > num_posts:
+		post_id = num_posts
+	if post_id == 97:
+		post_id = 96
+	if post_id == 86:
+		post_id = 85
+	
 	if post_id < 0:
 		self.wfile.write(bytes("{}" + "   ", "utf-8"))
 	else:

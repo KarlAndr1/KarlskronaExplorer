@@ -17,7 +17,7 @@ enum class Filter(private val display: String, private val id: String) {
 	}
 }
 
-class PostViewContext(private val filter: Filter) {
+class PostFetcher(private val filter: Filter) {
 	private var atId: Int? = null
 	private var atEnd: Boolean = false
 
