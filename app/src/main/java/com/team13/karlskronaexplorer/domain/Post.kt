@@ -20,6 +20,10 @@ class Post(private val id: Int, private val image: Bitmap, private val position:
 
 		return json.toString()
 	}
+
+	fun getRandomSeed(): Int {
+		return id*5+3
+	}
 }
 
 fun postFromJSON(json: String, image: Bitmap): Post {
