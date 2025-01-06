@@ -38,7 +38,7 @@ enum class View {
 }
 
 @Composable
-fun Nav(view: View, setView: (View) -> Unit) {
+fun Nav(view: View, activePost:Post?, setView: (View) -> Unit) {
     NavigationBar {
         NavigationBarItem(
             selected = view == View.Home,
@@ -50,7 +50,9 @@ fun Nav(view: View, setView: (View) -> Unit) {
         NavigationBarItem(
             selected = view == View.Find,
             onClick = {
-                if(view != View.Find) setView(View.Find)
+                if (activePost != null) {
+                    if(view != View.Find) setView(View.Find)
+                }
             },
             icon = { Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Active") }
         )
@@ -90,6 +92,7 @@ class MainActivity : ComponentActivity() {
             var selectedView by remember { mutableStateOf(View.Home) }
             var activePost by remember { mutableStateOf<Post?>(null) }
 
+
             LaunchedEffect(Unit) {
                 activePost = loadActivePost()
             }
@@ -105,7 +108,7 @@ class MainActivity : ComponentActivity() {
             MainTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    bottomBar = { Nav(selectedView) { view -> selectedView = view } },
+                    bottomBar = { Nav(selectedView, activePost) { view -> selectedView = view } },
                 ) { innerPadding ->
                     when(selectedView) {
                         View.Home -> HomeView(innerPadding, { x -> setActivePost(x) })
