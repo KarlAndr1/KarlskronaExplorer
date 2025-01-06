@@ -2,15 +2,26 @@ package com.team13.karlskronaexplorer.view
 
 import android.animation.ValueAnimator
 import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import com.mapbox.common.location.LocationError
 import com.mapbox.geojson.Point
 import com.mapbox.maps.extension.compose.MapEffect
@@ -56,12 +67,12 @@ class locConsumer(private val callback: (Position) -> Unit) : LocationConsumer {
 }
 
 @Composable
-fun FindView(innerPadding: PaddingValues, activePost: Post?) {
+fun FindView(innerPadding: PaddingValues, activePost: Post) {
 	val mapViewportState = rememberMapViewportState()
 	var circleColor by remember { mutableStateOf(Color.Red) }
 
 	MapboxMap(
-		Modifier.fillMaxSize(),
+		Modifier.fillMaxSize().padding(innerPadding),
 		mapViewportState = mapViewportState,
 	) {
 		MapEffect(circleColor) { mapView ->
@@ -71,7 +82,6 @@ fun FindView(innerPadding: PaddingValues, activePost: Post?) {
 				puckBearing = PuckBearing.COURSE
 				puckBearingEnabled = true
 			}
-			if(activePost != null) {
 			mapViewportState.transitionToFollowPuckState()
 			val annotationApi = mapView.annotations
 			val circleAnnotationManager = annotationApi.createCircleAnnotationManager()
@@ -90,9 +100,8 @@ fun FindView(innerPadding: PaddingValues, activePost: Post?) {
 
 			circleAnnotationManager.deleteAll()
 			circleAnnotationManager.create(circleAnnotationOptions)
-			}
+
 			mapView.location.getLocationProvider()?.registerLocationConsumer(locConsumer({position ->
-				if (activePost != null) {
 					var dist = position.distanceTo(activePost.getPosition())
 					if (dist < 600) {
 						circleColor = Color.Green
@@ -100,9 +109,22 @@ fun FindView(innerPadding: PaddingValues, activePost: Post?) {
 						circleColor = Color.Red
 					}
 					Log.d("test", dist.toString())
-					}
 			}))
 
 		}
 	}
+	Column(Modifier.fillMaxWidth().padding(0.dp,15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+		Image(
+			activePost.getImage().asImageBitmap(),
+			"Select Post Image",
+			modifier = Modifier
+				.fillMaxWidth(0.20f)
+				.aspectRatio(1f)
+				.clip(RoundedCornerShape(8.dp))
+			,
+			alignment = Alignment.TopCenter,
+			contentScale = ContentScale.Crop
+		)
+	}
 }
+

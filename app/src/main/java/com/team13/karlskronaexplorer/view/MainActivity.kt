@@ -147,7 +147,7 @@ class MainActivity : ComponentActivity() {
                     when(selectedView) {
                         View.Home -> HomeView(innerPadding, { x -> setActivePost(x) })
                         View.Post -> PostView(innerPadding)
-                        View.Find -> FindView(innerPadding, activePost)
+                        View.Find -> FindView(innerPadding, activePost!!)
                     }
                 }
             }
