@@ -17,15 +17,11 @@ enum class Filter(private val display: String, private val id: String) {
 	}
 }
 
-abstract class AbstractPostFetcher {
-	abstract suspend fun getPost(): Post?
-}
-
-class PostFetcher(private val filter: Filter) : AbstractPostFetcher() {
+open class PostFetcher(private val filter: Filter) {
 	private var atId: Int? = null
 	private var atEnd: Boolean = false
 
-	override suspend fun getPost(): Post? {
+	open suspend fun getPost(): Post? {
 		if(atEnd) return null
 
 		val res = fetchPost(filter, atId)

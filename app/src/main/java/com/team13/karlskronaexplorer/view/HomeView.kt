@@ -48,7 +48,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.team13.karlskronaexplorer.domain.AbstractPostFetcher
 import com.team13.karlskronaexplorer.domain.Filter
 import com.team13.karlskronaexplorer.domain.Post
 import com.team13.karlskronaexplorer.domain.PostFetcher
@@ -79,7 +78,7 @@ private fun FilterButtons(selected: Filter?, setSelected: (Filter) -> Unit) {
 }
 
 @Composable
-fun Gallery(fetchCtx: AbstractPostFetcher, setActivePost: (Post) -> Unit) {
+fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
 	// https://stackoverflow.com/questions/68919900/screen-width-and-height-in-jetpack-compose
 	val screenWidth = LocalConfiguration.current.screenWidthDp
 	val screenHeight = LocalConfiguration.current.screenHeightDp

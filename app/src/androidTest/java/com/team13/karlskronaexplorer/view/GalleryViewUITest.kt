@@ -6,9 +6,10 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.team13.karlskronaexplorer.domain.AbstractPostFetcher
+import com.team13.karlskronaexplorer.domain.Filter
 import com.team13.karlskronaexplorer.domain.Position
 import com.team13.karlskronaexplorer.domain.Post
+import com.team13.karlskronaexplorer.domain.PostFetcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,7 +20,7 @@ private val mockPost = Post(
     Position(12.5, 24.25)
 )
 
-class MockPostFetcher : AbstractPostFetcher() {
+class MockPostFetcher : PostFetcher(Filter.New) {
     var loadedPosts = 0;
 
     var atEnd = false

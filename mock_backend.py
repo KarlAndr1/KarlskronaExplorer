@@ -34,7 +34,7 @@ def handlePostQuery(self):
 	else:
 		self.wfile.write(bytes(f'''{{
 			"id": {post_id},
-			"image_ref": "https://picsum.photos/id/{post_id}/720/1280",
+			"image_ref": "https://picsum.photos/id/{post_id}/480/320",
 			"latitude": 56.161224,
 			"longitude": 15.586900
 		}}''' + "   ", "utf-8"))
