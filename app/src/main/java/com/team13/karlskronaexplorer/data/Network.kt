@@ -30,20 +30,24 @@ private suspend fun getToken(): String {
 		if (tokenFile.isFile && tokenFile.length() != 0L) {
 			tokenFile.readBytes().toString(Charsets.UTF_8)
 		} else {
-			val token = postJSON("$API_ENDPOINT/new-token").getString("token")
+			val token = postJSON("$API_ENDPOINT/new-token", useToken = false).getString("token")
 			tokenFile.writeBytes(token.toByteArray(Charsets.UTF_8))
 			token
 		}
 	}
 }
 
-private suspend fun postJSON(url: String, json: JSONObject? = null): JSONObject {
+private suspend fun postJSON(url: String, json: JSONObject? = null, useToken: Boolean = true): JSONObject {
 	return withContext(Dispatchers.IO) {
 		val connection = URL(url).openConnection() as HttpURLConnection
 		connection.requestMethod = "POST"
 
 		if(json != null) connection.doOutput = true
 		connection.doInput = true
+
+		if(useToken) {
+			connection.setRequestProperty("Authorization", getToken())
+		}
 
 		connection.connect()
 		if(json != null) {
@@ -126,5 +130,11 @@ suspend fun makePost(coordinates: Position, image: Bitmap) {
 		connection.inputStream.close()
 
 		connection.disconnect()
+	}
+}
+
+suspend fun markPostFound(postId: Int) {
+	withContext(Dispatchers.IO) {
+		postJSON("$API_ENDPOINT/post-found/$postId")
 	}
 }

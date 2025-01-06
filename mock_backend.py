@@ -85,6 +85,12 @@ class Handler(BaseHTTPRequestHandler):
 			handleNewTokenQuery(self)
 		elif self.path == "/new-post":
 			handleNewPostQuery(self)
+		elif self.path.startswith("/post-found"):
+			self.send_response(200)
+			self.send_header("content-type", "application/json")
+			self.end_headers()
+			self.wfile.write(bytes("{}" + "   ", "utf-8"))
+			print("POST MARKED AS FOUND")
 		else:
 			self.send_response(404)
 

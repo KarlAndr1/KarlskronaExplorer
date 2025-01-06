@@ -7,6 +7,7 @@ package com.team13.karlskronaexplorer.view
 
 import android.animation.ValueAnimator
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.mapbox.common.location.LocationError
@@ -52,6 +55,8 @@ import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.team13.karlskronaexplorer.domain.Position
 import com.team13.karlskronaexplorer.domain.Post
+import kotlinx.coroutines.launch
+import java.io.IOException
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -100,7 +105,17 @@ fun FindView(innerPadding: PaddingValues, activePost: Post, unselect: ()->Unit) 
 	val rand = Random(seed = activePost.getRandomSeed())
 	val randomLoc1 = rand.nextDouble(0.0001,0.0003)
 	val randomLoc2 = rand.nextDouble(0.0001,0.0003)
+
+	val networkErrToast = Toast.makeText(LocalContext.current, "An error occurred whilst attempting to reach the server", Toast.LENGTH_SHORT)
 	if(locationFound) {
+		LaunchedEffect(activePost) {
+			try {
+				activePost.markAsFound()
+			} catch (e: IOException) {
+				networkErrToast.show()
+			}
+		}
+
 		Dialog(
 			onDismissRequest = {}
 		) {

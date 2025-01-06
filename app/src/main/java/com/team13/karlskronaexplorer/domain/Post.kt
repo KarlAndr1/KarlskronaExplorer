@@ -1,6 +1,7 @@
 package com.team13.karlskronaexplorer.domain
 
 import android.graphics.Bitmap
+import com.team13.karlskronaexplorer.data.markPostFound
 import org.json.JSONObject
 
 class Post(private val id: Int, private val image: Bitmap, private val position: Position) {
@@ -23,6 +24,10 @@ class Post(private val id: Int, private val image: Bitmap, private val position:
 
 	fun getRandomSeed(): Int {
 		return id*5+3
+	}
+
+	suspend fun markAsFound() {
+		markPostFound(id)
 	}
 }
 
