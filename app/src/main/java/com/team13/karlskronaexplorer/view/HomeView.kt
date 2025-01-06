@@ -1,7 +1,7 @@
 package com.team13.karlskronaexplorer.view
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableState
@@ -41,15 +41,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.team13.karlskronaexplorer.domain.Post
 import com.team13.karlskronaexplorer.domain.Filter
+import com.team13.karlskronaexplorer.domain.Post
 import com.team13.karlskronaexplorer.domain.PostFetcher
+import java.io.IOException
 
 @Composable
 fun HomeView(innerPadding: PaddingValues, setActivePost: (Post) -> Unit) {
@@ -84,6 +85,7 @@ private fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
 	val posts = remember(fetchCtx) { mutableStateListOf<Post>() }
 	var scroll by remember(fetchCtx) { mutableFloatStateOf(0f) }
 	var selectedPost by remember(fetchCtx) { mutableStateOf<Post?>(null) }
+	var fetchError by remember(fetchCtx) { mutableStateOf(false) }
 
 	val bufferPosts = 42; // Number of extra posts past the end that should be loaded
 	val spacing = 10.dp; // Spacing between each grid item
@@ -96,16 +98,29 @@ private fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
 
 	// Given how many posts are currently loaded, when should the scrolling stop
 	// so that the user can't scroll too deep into the unloaded section
-	val maxScroll = ((posts.size + bufferPosts) / itemsPerRow - rows) * (itemSize + spacing).value
+	val maxScroll = ((posts.size + bufferPosts) / itemsPerRow - rows - 1) * (itemSize + spacing).value
 
-	LaunchedEffect(fetchCtx, scroll) {
-		val lastVisiblePost = (scrolledRows + rows) * itemsPerRow
-		for(i in posts.size until lastVisiblePost + bufferPosts) {
-			posts.add(fetchCtx.getPost() ?: break)
+	val fetchErrorToast = Toast.makeText(LocalContext.current, "Something went wrong whilst fetching posts", Toast.LENGTH_SHORT)
+
+	val lastVisiblePost = (scrolledRows + rows) * itemsPerRow
+	if(posts.size < lastVisiblePost + bufferPosts && !fetchError) {
+		LaunchedEffect(fetchCtx, posts.size) {
+			try {
+				val post = fetchCtx.getPost()
+				if(post != null)  posts.add(post)
+			} catch (_: IOException) {
+				fetchErrorToast.show()
+				fetchError = true
+			}
 		}
 	}
 
-	Text("Scroll $scroll, maxScroll $maxScroll, loaded ${posts.size}")
+	if(fetchError && posts.size == 0) {
+		Text("Unable to fetch any posts; Check your network connection")
+		return
+	}
+
+	//Text("Scroll $scroll, maxScroll $maxScroll, loaded ${posts.size}")
 	Box(Modifier.fillMaxWidth().scrollable(
 		ScrollableState { x: Float ->
 			val current = scroll
@@ -161,8 +176,8 @@ private fun Gallery(fetchCtx: PostFetcher, setActivePost: (Post) -> Unit) {
 								contentScale = ContentScale.Crop
 							)
 						} else {
-							Box(Modifier.requiredSize(itemSize).background(Color.Gray)) {
-								Text("$index")
+							Box(Modifier.requiredSize(itemSize)) {
+								//Text("$index")
 							}
 						}
 					}
