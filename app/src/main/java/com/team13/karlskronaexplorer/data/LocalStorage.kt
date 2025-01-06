@@ -29,7 +29,7 @@ fun decodePost(stream: InputStream): Post {
         header.add(byte.toByte())
     }
 
-    val image = BitmapFactory.decodeStream(stream)
+    val image = BitmapFactory.decodeStream(stream)!!
 
     return postFromJSON(
         header.toByteArray().toString(Charsets.UTF_8),

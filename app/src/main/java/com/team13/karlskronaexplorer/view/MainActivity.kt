@@ -79,6 +79,9 @@ fun MainTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable (
     )
 }
 
+fun debugSetFilesDirPath(path: String) {
+    filesDirPath = path
+}
 private var filesDirPath: String? = null
 fun getFilesDirPath(): String {
     return filesDirPath!!
